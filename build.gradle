@@ -25,6 +25,8 @@ allprojects {
 	group "org.springframework.boot"
 
 	repositories {
+		//因为 Gradle 支持使用 Maven 依赖，所以我们可以使用阿里云的 Maven 镜像
+		maven{ url 'https://maven.aliyun.com/nexus/content/groups/public/'}
 		mavenCentral()
 		if (version.contains('-')) {
 			maven { url "https://repo.spring.io/milestone" }
