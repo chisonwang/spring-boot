@@ -53,7 +53,9 @@ class JarLauncherTests extends AbstractExecutableArchiveLauncherTests {
 		List<Archive> archives = new ArrayList<>();
 		launcher.getClassPathArchivesIterator().forEachRemaining(archives::add);
 		assertThat(getUrls(archives)).containsExactlyInAnyOrder(getExpectedFileUrls(explodedRoot));
+		System.out.println("sout================================");
 		for (Archive archive : archives) {
+			System.out.println(archive.getUrl());
 			archive.close();
 		}
 	}

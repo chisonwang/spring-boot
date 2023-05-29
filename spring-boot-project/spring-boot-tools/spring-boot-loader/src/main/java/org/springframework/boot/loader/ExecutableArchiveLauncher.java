@@ -82,6 +82,7 @@ public abstract class ExecutableArchiveLauncher extends Launcher {
 
 	@Override
 	protected ClassLoader createClassLoader(Iterator<Archive> archives) throws Exception {
+		// 获得所有 Archive 的 URL 地址
 		List<URL> urls = new ArrayList<>(guessClassPathSize());
 		while (archives.hasNext()) {
 			urls.add(archives.next().getUrl());
@@ -89,6 +90,7 @@ public abstract class ExecutableArchiveLauncher extends Launcher {
 		if (this.classPathIndex != null) {
 			urls.addAll(this.classPathIndex.getUrls());
 		}
+		// 创建加载这些 URL 的 ClassLoader
 		return createClassLoader(urls.toArray(new URL[0]));
 	}
 
@@ -102,6 +104,7 @@ public abstract class ExecutableArchiveLauncher extends Launcher {
 	@Override
 	protected Iterator<Archive> getClassPathArchivesIterator() throws Exception {
 		Archive.EntryFilter searchFilter = this::isSearchCandidate;
+		// 目的就是过滤获得，BOOT-INF/classes/ 目录下的类，以及 BOOT-INF/lib/ 的内嵌 jar 包
 		Iterator<Archive> archives = this.archive.getNestedArchives(searchFilter,
 				(entry) -> isNestedArchive(entry) && !isEntryIndexed(entry));
 		if (isPostProcessingClassPathArchives()) {
@@ -118,10 +121,12 @@ public abstract class ExecutableArchiveLauncher extends Launcher {
 	}
 
 	private Iterator<Archive> applyClassPathArchivePostProcessing(Iterator<Archive> archives) throws Exception {
+		// <1> 获得所有 Archive
 		List<Archive> list = new ArrayList<>();
 		while (archives.hasNext()) {
 			list.add(archives.next());
 		}
+		// <2> 后续处理
 		postProcessClassPathArchives(list);
 		return list.iterator();
 	}

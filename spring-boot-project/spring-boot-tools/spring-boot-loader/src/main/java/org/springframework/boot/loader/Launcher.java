@@ -50,11 +50,16 @@ public abstract class Launcher {
 	 */
 	protected void launch(String[] args) throws Exception {
 		if (!isExploded()) {
+			// 注册 URL 协议处理器
+			// 注册 Spring Boot 自定义的 URLStreamHandler 实现类，用于 jar 包的加载读取。
 			JarFile.registerUrlProtocolHandler();
 		}
+		// 创建类加载器 用于从 jar 包中加载类。
+		// #getClassPathArchives() 方法，它是由 ExecutableArchiveLauncher 所实现
 		ClassLoader classLoader = createClassLoader(getClassPathArchivesIterator());
 		String jarMode = System.getProperty("jarmode");
 		String launchClass = (jarMode != null && !jarMode.isEmpty()) ? JAR_MODE_LAUNCHER : getMainClass();
+		// 执行 启动类的main方法
 		launch(args, launchClass, classLoader);
 	}
 
@@ -149,6 +154,7 @@ public abstract class Launcher {
 	}
 
 	protected final Archive createArchive() throws Exception {
+		// 获得 jar 所在的绝对路径
 		ProtectionDomain protectionDomain = getClass().getProtectionDomain();
 		CodeSource codeSource = protectionDomain.getCodeSource();
 		URI location = (codeSource != null) ? codeSource.getLocation().toURI() : null;
@@ -160,6 +166,8 @@ public abstract class Launcher {
 		if (!root.exists()) {
 			throw new IllegalStateException("Unable to determine code source archive from " + root);
 		}
+		// 如果是目录，则使用 ExplodedArchive 进行展开
+		// 如果不是目录，则使用 JarFileArchive
 		return (root.isDirectory() ? new ExplodedArchive(root) : new JarFileArchive(root));
 	}
 

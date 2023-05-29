@@ -164,6 +164,7 @@ public interface Archive extends Iterable<Archive.Entry>, AutoCloseable {
 
 	/**
 	 * Strategy interface to filter {@link Entry Entries}.
+	 * 函数式接口
 	 */
 	@FunctionalInterface
 	interface EntryFilter {
