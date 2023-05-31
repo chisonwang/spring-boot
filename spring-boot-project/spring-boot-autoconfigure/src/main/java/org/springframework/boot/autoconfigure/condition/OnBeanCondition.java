@@ -75,24 +75,36 @@ import org.springframework.util.StringUtils;
  */
 @Order(Ordered.LOWEST_PRECEDENCE)
 class OnBeanCondition extends FilteringSpringBootCondition implements ConfigurationCondition {
-
+	//获取bean所处的阶段
 	@Override
 	public ConfigurationPhase getConfigurationPhase() {
 		return ConfigurationPhase.REGISTER_BEAN;
 	}
 
+	/**
+	 * 根据自动化配置注解元数据判定指定配置类是否符合条件
+	 * @param autoConfigurationClasses
+	 * @param autoConfigurationMetadata
+	 * @return ConditionOutcome[]
+	 */
 	@Override
 	protected final ConditionOutcome[] getOutcomes(String[] autoConfigurationClasses,
 			AutoConfigurationMetadata autoConfigurationMetadata) {
+		//创建自动化配置类匹配结果集类
 		ConditionOutcome[] outcomes = new ConditionOutcome[autoConfigurationClasses.length];
 		for (int i = 0; i < outcomes.length; i++) {
+			//获取自动化配置类
 			String autoConfigurationClass = autoConfigurationClasses[i];
 			if (autoConfigurationClass != null) {
+				//获取自动化配置对应的条件注解元数据信息
 				Set<String> onBeanTypes = autoConfigurationMetadata.getSet(autoConfigurationClass, "ConditionalOnBean");
+				//获取条件匹配结果
 				outcomes[i] = getOutcome(onBeanTypes, ConditionalOnBean.class);
 				if (outcomes[i] == null) {
+					//获取配置类条件注解ConditionalOnSingleCandidate的元数据
 					Set<String> onSingleCandidateTypes = autoConfigurationMetadata.getSet(autoConfigurationClass,
 							"ConditionalOnSingleCandidate");
+					//获取条件匹配结果
 					outcomes[i] = getOutcome(onSingleCandidateTypes, ConditionalOnSingleCandidate.class);
 				}
 			}
@@ -100,13 +112,23 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 		return outcomes;
 	}
 
+	/**
+	 * 根据条件注解bean的类型及注解获取匹配结果
+	 *
+	 * @param requiredBeanTypes
+	 * @param annotation
+	 * @return ConditionOutcome
+	 */
 	private ConditionOutcome getOutcome(Set<String> requiredBeanTypes, Class<? extends Annotation> annotation) {
+		//通过过滤器及反射的方式确定bean是否存在
 		List<String> missing = filter(requiredBeanTypes, ClassNameFilter.MISSING, getBeanClassLoader());
+		//如果不存在，则返回不匹配信息
 		if (!missing.isEmpty()) {
 			ConditionMessage message = ConditionMessage.forCondition(annotation)
 					.didNotFind("required type", "required types").items(Style.QUOTE, missing);
 			return ConditionOutcome.noMatch(message);
 		}
+		//如果存在则返回null
 		return null;
 	}
 

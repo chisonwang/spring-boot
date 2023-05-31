@@ -45,13 +45,20 @@ abstract class FilteringSpringBootCondition extends SpringBootCondition
 
 	@Override
 	public boolean[] match(String[] autoConfigurationClasses, AutoConfigurationMetadata autoConfigurationMetadata) {
+		//获取条件评估报告类
 		ConditionEvaluationReport report = ConditionEvaluationReport.find(this.beanFactory);
+		//获取配置类匹配结果集
 		ConditionOutcome[] outcomes = getOutcomes(autoConfigurationClasses, autoConfigurationMetadata);
+		//创建boolean数组
 		boolean[] match = new boolean[outcomes.length];
 		for (int i = 0; i < outcomes.length; i++) {
+			//如果结果为null,则匹配，否则根据具体结果集判定
 			match[i] = (outcomes[i] == null || outcomes[i].isMatch());
+			//如果不匹配，则将配置类及匹配信息存入条件评估报告对象中
 			if (!match[i] && outcomes[i] != null) {
+				//打印trace级别的日志
 				logOutcome(autoConfigurationClasses[i], outcomes[i]);
+				//将数据存入条件评估报告对象集合
 				if (report != null) {
 					report.recordConditionEvaluation(autoConfigurationClasses[i], this, outcomes[i]);
 				}
@@ -60,6 +67,12 @@ abstract class FilteringSpringBootCondition extends SpringBootCondition
 		return match;
 	}
 
+	/**
+	 * 获取配置类匹配结果集，具体由子类实现
+	 * @param autoConfigurationClasses
+	 * @param autoConfigurationMetadata
+	 * @return
+	 */
 	protected abstract ConditionOutcome[] getOutcomes(String[] autoConfigurationClasses,
 			AutoConfigurationMetadata autoConfigurationMetadata);
 
@@ -83,10 +96,12 @@ abstract class FilteringSpringBootCondition extends SpringBootCondition
 
 	protected final List<String> filter(Collection<String> classNames, ClassNameFilter classNameFilter,
 			ClassLoader classLoader) {
+		//如果类名不存在，则直接返回空数组
 		if (CollectionUtils.isEmpty(classNames)) {
 			return Collections.emptyList();
 		}
 		List<String> matches = new ArrayList<>(classNames.size());
+		//根据反射的方式确定确定指定的类是否存在，如果不存在则返回true,否则返回false
 		for (String candidate : classNames) {
 			if (classNameFilter.matches(candidate, classLoader)) {
 				matches.add(candidate);
