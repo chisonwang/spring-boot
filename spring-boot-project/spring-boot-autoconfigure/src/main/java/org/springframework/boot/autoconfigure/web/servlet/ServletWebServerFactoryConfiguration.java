@@ -62,7 +62,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 class ServletWebServerFactoryConfiguration {
-
+	// 默认由tomcat依赖
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass({ Servlet.class, Tomcat.class, UpgradeProtocol.class })
 	@ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)
@@ -88,6 +88,7 @@ class ServletWebServerFactoryConfiguration {
 	/**
 	 * Nested configuration if Jetty is being used.
 	 */
+	// 如果有引入Jetty 才会有 Server.class\ WebAppContext.class
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass({ Servlet.class, Server.class, Loader.class, WebAppContext.class })
 	@ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)
@@ -106,6 +107,7 @@ class ServletWebServerFactoryConfiguration {
 	/**
 	 * Nested configuration if Undertow is being used.
 	 */
+	// 如果有引入 Undertow依赖，才会有 Undertow.class
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass({ Servlet.class, Undertow.class, SslClientAuthMode.class })
 	@ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)

@@ -134,8 +134,11 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 	 */
 	@Override
 	protected void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+		// <1.1> 注册 WebApplicationContextServletContextAwareProcessor
 		beanFactory.addBeanPostProcessor(new WebApplicationContextServletContextAwareProcessor(this));
+		// <1.2> 忽略 ServletContextAware 接口。
 		beanFactory.ignoreDependencyInterface(ServletContextAware.class);
+		// <2> 注册 ExistingWebApplicationScopes
 		registerWebApplicationScopes();
 	}
 
@@ -145,6 +148,7 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 			super.refresh();
 		}
 		catch (RuntimeException ex) {
+			// 停止 WebServer
 			WebServer webServer = this.webServer;
 			if (webServer != null) {
 				webServer.stop();
@@ -166,6 +170,7 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 
 	@Override
 	protected void doClose() {
+		// 发布关闭事件（应用程序不愿意接收流量。）
 		if (isActive()) {
 			AvailabilityChangeEvent.publish(this, ReadinessState.REFUSING_TRAFFIC);
 		}
@@ -175,14 +180,19 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 	private void createWebServer() {
 		WebServer webServer = this.webServer;
 		ServletContext servletContext = getServletContext();
+		// <1> 如果 webServer 为空，说明未初始化
 		if (webServer == null && servletContext == null) {
+			// <1.1> 获得 ServletWebServerFactory 对象
 			StartupStep createWebServer = this.getApplicationStartup().start("spring.boot.webserver.create");
 			ServletWebServerFactory factory = getWebServerFactory();
 			createWebServer.tag("factory", factory.getClass().toString());
+			// <1.2> 获得 ServletContextInitializer 对象
+			// <1.3> 创建（获得） WebServer 对象
 			this.webServer = factory.getWebServer(getSelfInitializer());
 			createWebServer.end();
 			getBeanFactory().registerSingleton("webServerGracefulShutdown",
 					new WebServerGracefulShutdownLifecycle(this.webServer));
+			// 2 注册 ServletWebServerInitializedEvent 事件
 			getBeanFactory().registerSingleton("webServerStartStop",
 					new WebServerStartStopLifecycle(this, this.webServer));
 		}
@@ -194,6 +204,7 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 				throw new ApplicationContextException("Cannot initialize servlet context", ex);
 			}
 		}
+		// <3> 初始化 PropertySource
 		initPropertySources();
 	}
 
@@ -210,10 +221,14 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 			throw new ApplicationContextException("Unable to start ServletWebServerApplicationContext due to missing "
 					+ "ServletWebServerFactory bean.");
 		}
+		// 如果有多个，就报错。
+		// 比如引入了jetty依赖，但是没有exclude掉Tomcat的依赖
 		if (beanNames.length > 1) {
 			throw new ApplicationContextException("Unable to start ServletWebServerApplicationContext due to multiple "
 					+ "ServletWebServerFactory beans : " + StringUtils.arrayToCommaDelimitedString(beanNames));
 		}
+		// 获得 ServletWebServerFactory 类型对应的 Bean 对象
+		// 默认会是TomcatServletWebServerFactory
 		return getBeanFactory().getBean(beanNames[0], ServletWebServerFactory.class);
 	}
 
@@ -224,13 +239,29 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 	 * @see #prepareWebApplicationContext(ServletContext)
 	 */
 	private org.springframework.boot.web.servlet.ServletContextInitializer getSelfInitializer() {
+		// 初始化 WebServer
 		return this::selfInitialize;
+		// 同下面等价
+		/*
+        return new ServletContextInitializer() {
+
+            @Override
+            public void onStartup(ServletContext servletContext) throws ServletException {
+                selfInitialize(servletContext);
+            }
+
+        };
+		*/
 	}
 
 	private void selfInitialize(ServletContext servletContext) throws ServletException {
+		// <1> 添加 Spring 容器到 servletContext 属性中。
 		prepareWebApplicationContext(servletContext);
+		// <2> 注册 ServletContextScope
 		registerApplicationScope(servletContext);
+		// <3> 注册 web-specific environment beans ("contextParameters", "contextAttributes")
 		WebApplicationContextUtils.registerEnvironmentBeans(getBeanFactory(), servletContext);
+		// <4> 获得所有 ServletContextInitializer ，并逐个进行启动
 		for (ServletContextInitializer beans : getServletContextInitializerBeans()) {
 			beans.onStartup(servletContext);
 		}
@@ -244,8 +275,11 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 	}
 
 	private void registerWebApplicationScopes() {
+		// 创建 ExistingWebApplicationScopes 对象
 		ExistingWebApplicationScopes existingScopes = new ExistingWebApplicationScopes(getBeanFactory());
+		// 注册 ExistingWebApplicationScopes 到 WebApplicationContext 中
 		WebApplicationContextUtils.registerWebApplicationScopes(getBeanFactory());
+		// 恢复
 		existingScopes.restore();
 	}
 
@@ -268,22 +302,27 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 	 * @param servletContext the operational servlet context
 	 */
 	protected void prepareWebApplicationContext(ServletContext servletContext) {
+		// 如果已经在 ServletContext 中，则根据情况进行判断。
 		Object rootContext = servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
 		if (rootContext != null) {
+			// 如果是相同容器，抛出 IllegalStateException 异常。说明可能有重复的 ServletContextInitializers 。
 			if (rootContext == this) {
 				throw new IllegalStateException(
 						"Cannot initialize context because there is already a root application context present - "
 								+ "check whether you have multiple ServletContextInitializers!");
 			}
+			// 如果不同容器，则直接返回。
 			return;
 		}
 		servletContext.log("Initializing Spring embedded WebApplicationContext");
 		try {
+			// <X> 设置当前 Spring 容器到 ServletContext 中
 			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Published root WebApplicationContext as ServletContext attribute with name ["
 						+ WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE + "]");
 			}
+			// <Y> 设置到 `servletContext` 属性中。
 			setServletContext(servletContext);
 			if (logger.isInfoEnabled()) {
 				long elapsedTime = System.currentTimeMillis() - getStartupDate();

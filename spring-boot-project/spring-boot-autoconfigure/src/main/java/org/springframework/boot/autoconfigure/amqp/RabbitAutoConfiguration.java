@@ -85,6 +85,7 @@ import org.springframework.core.io.ResourceLoader;
  * @author Chris Bono
  * @since 1.0.0
  */
+
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass({ RabbitTemplate.class, Channel.class })
 @EnableConfigurationProperties(RabbitProperties.class)

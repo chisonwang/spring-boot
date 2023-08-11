@@ -81,6 +81,7 @@ public class EnvironmentPostProcessorApplicationListener implements SmartApplica
 				|| ApplicationFailedEvent.class.isAssignableFrom(eventType);
 	}
 
+	// EnvironmentPostProcessor 入口
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
 		if (event instanceof ApplicationEnvironmentPreparedEvent) {
