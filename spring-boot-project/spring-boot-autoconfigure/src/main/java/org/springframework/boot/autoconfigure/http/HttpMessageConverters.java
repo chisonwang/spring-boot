@@ -99,7 +99,6 @@ public class HttpMessageConverters implements Iterable<HttpMessageConverter<?>> 
 	public HttpMessageConverters(Collection<HttpMessageConverter<?>> additionalConverters) {
 		this(true, additionalConverters);
 	}
-
 	/**
 	 * Create a new {@link HttpMessageConverters} instance with the specified converters.
 	 * @param addDefaultConverters if default converters should be added
@@ -108,6 +107,7 @@ public class HttpMessageConverters implements Iterable<HttpMessageConverter<?>> 
 	 * found). The {@link #postProcessConverters(List)} method can be used for further
 	 * converter manipulation.
 	 */
+	// HttpMessageConvertersAutoConfiguration 的@Bean HttpMessageConverters
 	public HttpMessageConverters(boolean addDefaultConverters, Collection<HttpMessageConverter<?>> converters) {
 		List<HttpMessageConverter<?>> combined = getCombinedConverters(converters,
 				addDefaultConverters ? getDefaultConverters() : Collections.emptyList());
@@ -128,6 +128,7 @@ public class HttpMessageConverters implements Iterable<HttpMessageConverter<?>> 
 					iterator.remove();
 				}
 			}
+			// 添加
 			combined.add(defaultConverter);
 			if (defaultConverter instanceof AllEncompassingFormHttpMessageConverter) {
 				configurePartConverters((AllEncompassingFormHttpMessageConverter) defaultConverter, converters);

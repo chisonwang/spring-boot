@@ -66,6 +66,7 @@ public class HttpMessageConvertersAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
+	// 自定义HttpMessageConverters 的源码入口
 	public HttpMessageConverters messageConverters(ObjectProvider<HttpMessageConverter<?>> converters) {
 		return new HttpMessageConverters(converters.orderedStream().collect(Collectors.toList()));
 	}
