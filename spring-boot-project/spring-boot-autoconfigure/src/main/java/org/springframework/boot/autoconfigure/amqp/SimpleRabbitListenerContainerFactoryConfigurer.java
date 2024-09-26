@@ -53,6 +53,7 @@ public final class SimpleRabbitListenerContainerFactoryConfigurer
 	@Override
 	public void configure(SimpleRabbitListenerContainerFactory factory, ConnectionFactory connectionFactory) {
 		PropertyMapper map = PropertyMapper.get();
+		// 从RabbitProperties中获取SimpleContainer 对监听器容器工厂进行配置
 		RabbitProperties.SimpleContainer config = getRabbitProperties().getListener().getSimple();
 		configure(factory, connectionFactory, config);
 		map.from(config::getConcurrency).whenNonNull().to(factory::setConcurrentConsumers);

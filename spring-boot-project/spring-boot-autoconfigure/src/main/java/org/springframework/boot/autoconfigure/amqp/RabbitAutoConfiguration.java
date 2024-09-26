@@ -90,6 +90,7 @@ import org.springframework.core.io.ResourceLoader;
 @ConditionalOnClass({ RabbitTemplate.class, Channel.class })
 @EnableConfigurationProperties(RabbitProperties.class)
 @Import({ RabbitAnnotationDrivenConfiguration.class, RabbitStreamConfiguration.class })
+// rabbit启动类 RabbitAnnotationDrivenConfiguration 这个是注解解析类
 public class RabbitAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)

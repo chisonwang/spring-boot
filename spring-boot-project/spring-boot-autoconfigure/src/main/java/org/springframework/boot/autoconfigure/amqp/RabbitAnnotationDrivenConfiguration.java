@@ -78,6 +78,7 @@ class RabbitAnnotationDrivenConfiguration {
 	@ConditionalOnMissingBean(name = "rabbitListenerContainerFactory")
 	@ConditionalOnProperty(prefix = "spring.rabbitmq.listener", name = "type", havingValue = "simple",
 			matchIfMissing = true)
+	// 注册Listener 声明监听器容器工厂配置以及监听器容器工厂
 	SimpleRabbitListenerContainerFactory simpleRabbitListenerContainerFactory(
 			SimpleRabbitListenerContainerFactoryConfigurer configurer, ConnectionFactory connectionFactory,
 			ObjectProvider<ContainerCustomizer<SimpleMessageListenerContainer>> simpleContainerCustomizer) {
@@ -113,6 +114,22 @@ class RabbitAnnotationDrivenConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@EnableRabbit
+	// 开启RabbitMQ功能
+	/**
+	 * @EnableRabbit 中 @Import({RabbitListenerConfigurationSelector.class})
+	 * @see org.springframework.amqp.rabbit.annotation.RabbitListenerConfigurationSelector
+	 * 导入了 RabbitBootstrapConfiguration
+	 * new RootBeanDefinition(RabbitListenerAnnotationBeanPostProcessor.class)
+	 * @see org.springframework.amqp.rabbit.annotation.RabbitListenerAnnotationBeanPostProcessor
+	 *   * 每个含有@RabbitListener注解的方法对应一个MethodRabbitListenerEndpoint对象，
+	 * 	 * 该对象会存储被@RabbitListener注解方法相关属性以及@RabbitListener注解指定的属性,
+	 * 	 * 最终和SimpleRabbitListenerContainerFactory组成AmqpListenerEndpointDescriptor对象
+	 * 	 * 放入endpointDescriptors集合中, Bean创建完成,初始化
+	 * postProcessAfterInitialization -> processAmqpListener -> processListener ->
+	 * registerEndpoint  注册所有的Listener
+	 * @see org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar
+	 * RabbitListenerEndpointRegistry  实现了SmartLifecycle接口，在应用启动完成之后会回调start()方法
+	 **/
 	@ConditionalOnMissingBean(name = RabbitListenerConfigUtils.RABBIT_LISTENER_ANNOTATION_PROCESSOR_BEAN_NAME)
 	static class EnableRabbitConfiguration {
 
